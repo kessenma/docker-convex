@@ -8,6 +8,7 @@ services:
       - "${SITE_PROXY_PORT:-3211}:3211"
     volumes:
       - data:/convex/data
+      - ./admin-key:/convex/admin-key
     environment:
       - INSTANCE_NAME=${INSTANCE_NAME:-}
       - INSTANCE_SECRET=${INSTANCE_SECRET:-}
