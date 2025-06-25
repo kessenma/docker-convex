@@ -22,50 +22,56 @@ A self-contained Convex database instance running in Docker with persistence, mo
 
 ---
 
+## Quick Start
+
+Get your Convex database running in one command:
+
+```bash
+pnpm run self-hosted:setup
+```
+
+This will:
+- Start the Docker containers
+- Generate admin credentials
+- Display the deployment URL, dashboard URL, and admin key
+- Save the admin key to a timestamped file in `./admin-key/`
+
+Then deploy your schema:
+
+```bash
+pnpm run deploy-functions
+```
+
 ## Database Setup
 
 This project runs a Convex database instance in Docker containers, providing a complete database environment with persistence and administration capabilities.
 
-### 1. Configure Database Environment
+### 1. Configure Database Environment (Optional)
 
-- Set up the environment configuration:
-  ```bash
-  cp .env.docker.example .devcontainer/.env.docker
-  cp .env.local.example .devcontainer/.env.local
-  ```
-
-- **Configure Database Settings** in `.devcontainer/.env.docker`:
-  - Set a secure `INSTANCE_SECRET` for database encryption
-  - Configure database ports if needed (defaults: 3210, 3211, 6791)
-  - Optionally configure storage paths and memory limits
-
-- **Configure Access Settings** in `.devcontainer/.env.local`:
-  ```bash
-  # Database connection URL
-  CONVEX_SELF_HOSTED_URL=http://localhost:3210
-  
-  # Admin key will be auto-generated on first startup
-  # CONVEX_SELF_HOSTED_ADMIN_KEY=
-  
-  # Ensure CONVEX_DEPLOYMENT is commented out for local database
-  # CONVEX_DEPLOYMENT=
-  ```
-
-### 2. Initialize Database (Automated)
-
-Run the automated setup script to initialize your database environment:
+For custom configuration, set up the environment files:
 
 ```bash
-./post-create-setup.sh
+cp .env.docker.example .env.docker
 ```
 
-This script will:
+**Configure Database Settings** in `.env.docker`:
+- Set a secure `INSTANCE_SECRET` for database encryption
+- Configure database ports if needed (defaults: 3210, 3211, 6791)
+- Optionally configure storage paths and memory limits
 
-- Configure environment settings
-- Initialize Docker containers
-- Generate database admin credentials
-- Set up initial database schema
-- Configure data persistence
+### 2. One-Command Setup (Recommended)
+
+Start everything with a single command:
+
+```bash
+pnpm run self-hosted:setup
+```
+
+This command will:
+- Start Docker containers
+- Wait for the backend to be ready
+- Generate and display admin credentials
+- Save credentials to `./admin-key/admin_key_[timestamp].md`
 
 ### 3. Database Operations
 
@@ -112,19 +118,24 @@ For manual control over the database setup:
 
 ## Database Management Commands
 
+### Quick Setup
+- `pnpm run self-hosted:setup` - **One-command setup**: Start containers and generate admin key
+- `pnpm run deploy-functions` - Deploy schema changes
+
 ### Core Database Operations
 - `pnpm run docker:up` - Start the database server
 - `pnpm run docker:down` - Stop the database server
 - `pnpm run docker:logs` - View database logs
-- `pnpm run deploy-functions` - Deploy schema changes
 
 ### Administration
 - `pnpm run docker:generate-admin-key` - Generate new admin credentials
 - `pnpm run self-hosted:setup-manual` - Manual database initialization
+- `pnpm run self-hosted:reset` - Stop services and perform full Docker reset
 
 ### Maintenance
-- `pnpm run post-create` - Initialize database environment
-- `pnpm run post-start` - Perform startup checks and maintenance
+- `pnpm run docker:cleanup-admin-keys` - Remove saved admin key files
+- `pnpm run docker:reset-images` - Stop Docker and prune system volumes
+- `pnpm run docker:reset-full` - Combine key cleanup and image reset
 
 > All commands use `pnpm`. Ensure it's installed via `npm install -g pnpm` if needed.
 
@@ -171,12 +182,18 @@ The Convex Admin Dashboard at [http://localhost:6791](http://localhost:6791) pro
 
 To access the admin dashboard:
 
-1. **Generate admin credentials:**
+1. **Quick Setup (Recommended):**
+   ```bash
+   pnpm run self-hosted:setup
+   ```
+   This will display the deployment URL, dashboard URL, and admin key.
+
+2. **Or generate credentials separately:**
    ```bash
    pnpm run docker:generate-admin-key
    ```
 
-2. **Use the generated key for dashboard login** - Format:
+3. **Use the generated key for dashboard login** - Format:
    ```
    instance-name|admin-key-hash
    ```
