@@ -1,18 +1,19 @@
-# Docker Convex
+# Docker Convex Boilerplate
 
-A self-contained Convex database instance running in Docker with persistence, monitoring, and administration capabilities. Ideal for local development, testing, and standalone database deployments.
+A self-hosted Convex database boilerplate running in Docker with persistence, monitoring, and administration capabilities. Perfect for integrating into monorepos or as a standalone database service.
 
 ## Architecture Overview
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    Docker Convex Stack                         │
+│                Docker Convex Database Boilerplate              │
 ├─────────────────────────────────────────────────────────────────┤
-│  Frontend (React + Vite)     │  Convex Functions              │
+│  Your Frontend App           │  Convex Functions              │
 │  ┌─────────────────────┐     │  ┌─────────────────────────┐   │
-│  │ src/App.tsx         │────▶│  │ convex/chat.ts          │   │
-│  │ - Chat UI           │     │  │ - sendMessage()         │   │
-│  │ - Real-time updates │     │  │ - getMessages()         │   │
+│  │ Svelte/React/Vue    │────▶│  │ convex/example.ts       │   │
+│  │ - Your UI           │     │  │ - listItems()           │   │
+│  │ - Real-time updates │     │  │ - addItem()             │   │
+│  │ - Custom features   │     │  │ - deleteItem()          │   │
 │  └─────────────────────┘     │  └─────────────────────────┘   │
 │           │                  │           │                     │
 │           ▼                  │           ▼                     │
@@ -37,14 +38,14 @@ The files in `convex/_generated/` are **automatically created** by Convex and ar
 
 ### 🔧 **api.js & api.d.ts**
 - **Purpose**: Provide typed API references for your frontend
-- **Contains**: `api.chat.sendMessage`, `api.chat.getMessages` references
-- **Used by**: `src/App.tsx` imports these to call your backend functions
+- **Contains**: `api.example.listItems`, `api.example.addItem`, `api.example.deleteItem` references
+- **Used by**: Your frontend app imports these to call your backend functions
 - **Auto-regenerated**: Every time you run `convex dev` or `deploy-functions`
 
 ### 🔧 **server.js & server.d.ts**
 - **Purpose**: Provide server-side utilities (`mutation`, `query`, `action`)
 - **Contains**: TypeScript definitions for Convex function builders
-- **Used by**: `convex/chat.ts` imports `mutation` and `query` from here
+- **Used by**: `convex/example.ts` imports `mutation` and `query` from here
 - **Auto-regenerated**: When Convex analyzes your schema and functions
 
 ### 🔧 **dataModel.d.ts**
@@ -59,17 +60,48 @@ The files in `convex/_generated/` are **automatically created** by Convex and ar
 
 Some files in this repository are optional or redundant:
 
-### 🗑️ **Files Removed**
-- **`convex/README.md`** - ✅ Removed (generic Convex documentation)
-- **`.idea/`** - ✅ Removed (JetBrains IDE configuration)
-- **`.devcontainer/.env example.docker`** - ✅ Removed (duplicate with typo)
-- **`.devcontainer/.env.example..local`** - ✅ Removed (duplicate with typo)
+### 🗑️ **Files Removed (Boilerplate Cleanup)**
+- **`src/`** - ✅ Removed (React frontend - use your own)
+- **`index.html`** - ✅ Removed (Vite entry point)
+- **`vite.config.mts`** - ✅ Removed (Vite configuration)
+- **`convex/chat.ts`** - ✅ Removed (replaced with `example.ts`)
+- **Frontend dependencies** - ✅ Removed (React, Vite, etc.)
+- **`convex/README.md`** - ✅ Removed (generic documentation)
+- **`.idea/`** - ✅ Removed (IDE configuration)
+- **Duplicate `.env` files** - ✅ Removed (typos in filenames)
 
-### 📋 **Keep These Files**
-- **`index.html`** - Required by Vite for the frontend
-- **`ADMIN_KEY_WORKFLOW.md`** - Useful documentation for admin key management
-- **`docker-build/`** - Contains Docker build scripts and utilities
-- **All files in `convex/_generated/`** - Essential for the application to work
+### 📋 **Essential Files**
+- **`convex/example.ts`** - Example functions (customize for your needs)
+- **`ADMIN_KEY_WORKFLOW.md`** - Admin key management documentation
+- **`docker-build/`** - Docker build scripts and utilities
+- **`docker-compose.yml`** - Container orchestration
+- **All files in `convex/_generated/`** - Auto-generated API bindings
+
+## Customizing Your Functions
+
+Replace the example functions in `convex/example.ts` with your own:
+
+```typescript
+// convex/yourFunctions.ts
+import { mutation, query } from "./_generated/server";
+import { v } from "convex/values";
+
+export const yourQuery = query({
+  args: { /* your args */ },
+  handler: async (ctx, args) => {
+    // Your query logic
+  },
+});
+
+export const yourMutation = mutation({
+  args: { /* your args */ },
+  handler: async (ctx, args) => {
+    // Your mutation logic
+  },
+});
+```
+
+After adding functions, run `pnpm run deploy-functions` to update the generated API.
 
 ## Process Flow
 
@@ -109,7 +141,7 @@ pnpm run deploy-functions
          │
          ▼
 ┌─────────────────────┐
-│ Analyze convex/     │ ──▶ Scan *.ts files for functions
+│ Analyze convex/     │ ──▶ Scan *.ts files (example.ts, etc.)
 └─────────────────────┘
          │
          ▼
@@ -157,11 +189,35 @@ This will:
 - Display the deployment URL, dashboard URL, and admin key
 - Save the admin key to a timestamped file in `./admin-key/`
 
-Then deploy your schema:
+Then deploy your functions:
 
 ```bash
 pnpm run deploy-functions
 ```
+
+## Integration with Your Frontend
+
+This boilerplate provides a ready-to-use Convex database. To connect your frontend:
+
+1. **Install Convex in your frontend project:**
+   ```bash
+   npm install convex
+   ```
+
+2. **Set your environment variable:**
+   ```bash
+   VITE_CONVEX_URL=http://localhost:3210  # or your deployment URL
+   ```
+
+3. **Import and use the generated API:**
+   ```typescript
+   import { api } from "./path/to/convex/_generated/api";
+   import { useQuery, useMutation } from "convex/react";
+   
+   // In your component
+   const items = useQuery(api.example.listItems);
+   const addItem = useMutation(api.example.addItem);
+   ```
 
 ## Database Setup
 
