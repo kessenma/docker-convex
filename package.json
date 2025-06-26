@@ -8,7 +8,6 @@
     "docker:down": "docker compose down",
     "docker:logs": "docker compose logs -f",
     "docker:generate-admin-key": "docker compose exec backend ./generate_admin_key.sh",
-    "docker:cleanup-admin-keys": "rm -rf ./admin-key",
     "docker:reset-images": "docker compose down && docker system prune -af --volumes",
     "docker:reset-full": "pnpm run docker:cleanup-admin-keys && pnpm run docker:reset-images",
     "self-hosted:setup": "pnpm run docker:up && echo 'Waiting for backend to start...' && sleep 10 && pnpm run docker:generate-admin-key",

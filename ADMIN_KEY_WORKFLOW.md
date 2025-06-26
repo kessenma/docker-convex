@@ -34,7 +34,6 @@ Admin keys are automatically saved to timestamped markdown files:
 - `pnpm run docker:generate-admin-key` - Generate admin key (containers must be running)
 
 ### Cleanup & Reset
-- `pnpm run docker:cleanup-admin-keys` - Remove all saved admin key files
 - `pnpm run docker:reset-images` - Stop containers and remove all Docker images/volumes
 - `pnpm run docker:reset-full` - Complete cleanup (admin keys + Docker reset)
 - `pnpm run self-hosted:reset` - Stop containers and perform full cleanup

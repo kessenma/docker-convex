@@ -1,6 +1,127 @@
-# Dockerized Convex Database
+# Docker Convex
 
 A self-contained Convex database instance running in Docker with persistence, monitoring, and administration capabilities. Ideal for local development, testing, and standalone database deployments.
+
+## Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Docker Convex Stack                         │
+├─────────────────────────────────────────────────────────────────┤
+│  Frontend (React + Vite)     │  Convex Functions              │
+│  ┌─────────────────────┐     │  ┌─────────────────────────┐   │
+│  │ src/App.tsx         │────▶│  │ convex/chat.ts          │   │
+│  │ - Chat UI           │     │  │ - sendMessage()         │   │
+│  │ - Real-time updates │     │  │ - getMessages()         │   │
+│  └─────────────────────┘     │  └─────────────────────────┘   │
+│           │                  │           │                     │
+│           ▼                  │           ▼                     │
+│  ┌─────────────────────┐     │  ┌─────────────────────────┐   │
+│  │ convex/_generated/  │◀────┼──│ Docker Backend          │   │
+│  │ - api.js/api.d.ts   │     │  │ Port 3210 (API)        │   │
+│  │ - server.js/.d.ts   │     │  │ Port 3211 (Site Proxy) │   │
+│  │ - dataModel.d.ts    │     │  └─────────────────────────┘   │
+│  └─────────────────────┘     │           │                     │
+│                               │           ▼                     │
+│                               │  ┌─────────────────────────┐   │
+│                               │  │ Dashboard (Port 6791)   │   │
+│                               │  │ - Admin Interface       │   │
+│                               │  │ - Database Management   │   │
+│                               │  └─────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+## Generated Files Explained
+
+The files in `convex/_generated/` are **automatically created** by Convex and are **essential** for your application:
+
+### 🔧 **api.js & api.d.ts**
+- **Purpose**: Provide typed API references for your frontend
+- **Contains**: `api.chat.sendMessage`, `api.chat.getMessages` references
+- **Used by**: `src/App.tsx` imports these to call your backend functions
+- **Auto-regenerated**: Every time you run `convex dev` or `deploy-functions`
+
+### 🔧 **server.js & server.d.ts**
+- **Purpose**: Provide server-side utilities (`mutation`, `query`, `action`)
+- **Contains**: TypeScript definitions for Convex function builders
+- **Used by**: `convex/chat.ts` imports `mutation` and `query` from here
+- **Auto-regenerated**: When Convex analyzes your schema and functions
+
+### 🔧 **dataModel.d.ts**
+- **Purpose**: TypeScript definitions for your database schema
+- **Contains**: Table definitions, document types, and ID types
+- **Note**: Currently permissive (`Doc = any`) because no schema.ts exists
+- **Auto-regenerated**: When you add a `convex/schema.ts` file
+
+**⚠️ DO NOT DELETE OR EDIT THESE FILES** - They're regenerated automatically!
+
+## Files You Can Safely Remove
+
+Some files in this repository are optional or redundant:
+
+### 🗑️ **Files Removed**
+- **`convex/README.md`** - ✅ Removed (generic Convex documentation)
+- **`.idea/`** - ✅ Removed (JetBrains IDE configuration)
+- **`.devcontainer/.env example.docker`** - ✅ Removed (duplicate with typo)
+- **`.devcontainer/.env.example..local`** - ✅ Removed (duplicate with typo)
+
+### 📋 **Keep These Files**
+- **`index.html`** - Required by Vite for the frontend
+- **`ADMIN_KEY_WORKFLOW.md`** - Useful documentation for admin key management
+- **`docker-build/`** - Contains Docker build scripts and utilities
+- **All files in `convex/_generated/`** - Essential for the application to work
+
+## Process Flow
+
+### 1. `self-hosted:setup` Process
+```
+pnpm run self-hosted:setup
+         │
+         ▼
+┌─────────────────────┐
+│ docker:up           │ ──▶ Start containers (backend + dashboard)
+└─────────────────────┘
+         │
+         ▼
+┌─────────────────────┐
+│ Wait 10 seconds     │ ──▶ Let backend initialize
+└─────────────────────┘
+         │
+         ▼
+┌─────────────────────┐
+│ generate-admin-key  │ ──▶ Create admin credentials
+└─────────────────────┘
+         │
+         ▼
+┌─────────────────────┐
+│ Save to admin-key/  │ ──▶ Store timestamped credentials
+└─────────────────────┘
+```
+
+### 2. `deploy-functions` Process
+```
+pnpm run deploy-functions
+         │
+         ▼
+┌─────────────────────┐
+│ convex dev --once   │ ──▶ Deploy functions to self-hosted instance
+└─────────────────────┘
+         │
+         ▼
+┌─────────────────────┐
+│ Analyze convex/     │ ──▶ Scan *.ts files for functions
+└─────────────────────┘
+         │
+         ▼
+┌─────────────────────┐
+│ Generate _generated │ ──▶ Create API bindings & types
+└─────────────────────┘
+         │
+         ▼
+┌─────────────────────┐
+│ Push to backend     │ ──▶ Upload functions to Docker instance
+└─────────────────────┘
+```
 
 ## Table of Contents
 
