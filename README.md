@@ -32,77 +32,6 @@ A self-hosted Convex database boilerplate running in Docker with persistence, mo
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-## Generated Files Explained
-
-The files in `convex/_generated/` are **automatically created** by Convex and are **essential** for your application:
-
-### 🔧 **api.js & api.d.ts**
-- **Purpose**: Provide typed API references for your frontend
-- **Contains**: `api.example.listItems`, `api.example.addItem`, `api.example.deleteItem` references
-- **Used by**: Your frontend app imports these to call your backend functions
-- **Auto-regenerated**: Every time you run `convex dev` or `deploy-functions`
-
-### 🔧 **server.js & server.d.ts**
-- **Purpose**: Provide server-side utilities (`mutation`, `query`, `action`)
-- **Contains**: TypeScript definitions for Convex function builders
-- **Used by**: `convex/example.ts` imports `mutation` and `query` from here
-- **Auto-regenerated**: When Convex analyzes your schema and functions
-
-### 🔧 **dataModel.d.ts**
-- **Purpose**: TypeScript definitions for your database schema
-- **Contains**: Table definitions, document types, and ID types
-- **Note**: Currently permissive (`Doc = any`) because no schema.ts exists
-- **Auto-regenerated**: When you add a `convex/schema.ts` file
-
-**⚠️ DO NOT DELETE OR EDIT THESE FILES** - They're regenerated automatically!
-
-## Files You Can Safely Remove
-
-Some files in this repository are optional or redundant:
-
-### 🗑️ **Files Removed (Boilerplate Cleanup)**
-- **`src/`** - ✅ Removed (React frontend - use your own)
-- **`index.html`** - ✅ Removed (Vite entry point)
-- **`vite.config.mts`** - ✅ Removed (Vite configuration)
-- **`convex/chat.ts`** - ✅ Removed (replaced with `example.ts`)
-- **Frontend dependencies** - ✅ Removed (React, Vite, etc.)
-- **`convex/README.md`** - ✅ Removed (generic documentation)
-- **`.idea/`** - ✅ Removed (IDE configuration)
-- **Duplicate `.env` files** - ✅ Removed (typos in filenames)
-
-### 📋 **Essential Files**
-- **`convex/example.ts`** - Example functions (customize for your needs)
-- **`ADMIN_KEY_WORKFLOW.md`** - Admin key management documentation
-- **`docker-build/`** - Docker build scripts and utilities
-- **`docker-compose.yml`** - Container orchestration
-- **All files in `convex/_generated/`** - Auto-generated API bindings
-
-## Customizing Your Functions
-
-Replace the example functions in `convex/example.ts` with your own:
-
-```typescript
-// convex/yourFunctions.ts
-import { mutation, query } from "./_generated/server";
-import { v } from "convex/values";
-
-export const yourQuery = query({
-  args: { /* your args */ },
-  handler: async (ctx, args) => {
-    // Your query logic
-  },
-});
-
-export const yourMutation = mutation({
-  args: { /* your args */ },
-  handler: async (ctx, args) => {
-    // Your mutation logic
-  },
-});
-```
-
-After adding functions, run `pnpm run deploy-functions` to update the generated API.
-
 ## Process Flow
 
 ### 1. `self-hosted:setup` Process
@@ -122,11 +51,6 @@ pnpm run self-hosted:setup
          ▼
 ┌─────────────────────┐
 │ generate-admin-key  │ ──▶ Create admin credentials
-└─────────────────────┘
-         │
-         ▼
-┌─────────────────────┐
-│ Save to admin-key/  │ ──▶ Store timestamped credentials
 └─────────────────────┘
 ```
 
@@ -166,6 +90,7 @@ pnpm run deploy-functions
 - [Database Management Commands](#database-management-commands)
 - [Database Access](#database-access)
 - [Troubleshooting](#troubleshooting)
+- [Generated Files Explained](#generated-files-explained)
 
 ## Prerequisites
 
@@ -480,3 +405,61 @@ Once the development server is running:
 1. Click on the "Ports" tab in VS Code
 2. Click the globe icon next to port 5173 to open your app
 3. Access the Convex dashboard on port 6791 (use the admin key as password)
+
+
+
+
+## Generated Files Explained
+
+The files in `convex/_generated/` are **automatically created** by Convex and are **essential** for your application:
+
+### 🔧 **api.js & api.d.ts**
+- **Purpose**: Provide typed API references for your frontend
+- **Contains**: `api.example.listItems`, `api.example.addItem`, `api.example.deleteItem` references
+- **Used by**: Your frontend app imports these to call your backend functions
+- **Auto-regenerated**: Every time you run `convex dev` or `deploy-functions`
+
+### 🔧 **server.js & server.d.ts**
+- **Purpose**: Provide server-side utilities (`mutation`, `query`, `action`)
+- **Contains**: TypeScript definitions for Convex function builders
+- **Used by**: `convex/example.ts` imports `mutation` and `query` from here
+- **Auto-regenerated**: When Convex analyzes your schema and functions
+
+### 🔧 **dataModel.d.ts**
+- **Purpose**: TypeScript definitions for your database schema
+- **Contains**: Table definitions, document types, and ID types
+- **Note**: Currently permissive (`Doc = any`) because no schema.ts exists
+- **Auto-regenerated**: When you add a `convex/schema.ts` file
+
+### 📋 **Essential Files**
+- **`convex/example.ts`** - Example functions (customize for your needs)
+- **`ADMIN_KEY_WORKFLOW.md`** - Admin key management documentation
+- **`docker-build/`** - Docker build scripts and utilities
+- **`docker-compose.yml`** - Container orchestration
+- **All files in `convex/_generated/`** - Auto-generated API bindings
+
+## Customizing Your Functions
+
+Replace the example functions in `convex/example.ts` with your own:
+
+```typescript
+// convex/yourFunctions.ts
+import { mutation, query } from "./_generated/server";
+import { v } from "convex/values";
+
+export const yourQuery = query({
+  args: { /* your args */ },
+  handler: async (ctx, args) => {
+    // Your query logic
+  },
+});
+
+export const yourMutation = mutation({
+  args: { /* your args */ },
+  handler: async (ctx, args) => {
+    // Your mutation logic
+  },
+});
+```
+
+After adding functions, run `pnpm run deploy-functions` to update the generated API.
