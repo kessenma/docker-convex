@@ -1,33 +1,49 @@
 # Docker Convex Boilerplate
 
-A self-hosted Convex database boilerplate running in Docker with persistence, monitoring, and administration capabilities. Perfect for integrating into monorepos or as a standalone database service.
+A self-hosted **Convex Backend-as-a-Service** boilerplate running in Docker. Unlike traditional databases where you write SQL queries or use ORMs, Convex combines your database and API layer into one unified system where your **API endpoints are defined as functions inside the database itself**.
+
+Perfect for developers familiar with SQL/NoSQL databases who want to modernize their stack with real-time capabilities, type safety, and serverless-style functions.
+
+## What Makes Convex Different
+
+**Traditional Stack:**
+```
+Next.js App → API Routes → ORM/Query Builder → Database
+```
+
+**Convex Stack:**
+```
+Next.js App → Generated Client → Convex Functions (Your API + Database)
+```
+
+### Key Differences from SQL/NoSQL:
+- **No separate API layer**: Your database functions ARE your API endpoints
+- **Real-time by default**: All queries automatically subscribe to changes
+- **Type-safe**: Full TypeScript support from database to frontend
+- **Serverless functions**: Write backend logic as simple TypeScript functions
 
 ## Architecture Overview
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                Docker Convex Database Boilerplate              │
+│                Docker Convex Backend-as-a-Service              │
 ├─────────────────────────────────────────────────────────────────┤
-│  Your Frontend App           │  Convex Functions              │
+│  Next.js Container            │  Convex Container              │
 │  ┌─────────────────────┐     │  ┌─────────────────────────┐   │
-│  │ Svelte/React/Vue    │────▶│  │ convex/example.ts       │   │
-│  │ - Your UI           │     │  │ - listItems()           │   │
-│  │ - Real-time updates │     │  │ - addItem()             │   │
-│  │ - Custom features   │     │  │ - deleteItem()          │   │
-│  └─────────────────────┘     │  └─────────────────────────┘   │
-│           │                  │           │                     │
-│           ▼                  │           ▼                     │
-│  ┌─────────────────────┐     │  ┌─────────────────────────┐   │
-│  │ convex/_generated/  │◀────┼──│ Docker Backend          │   │
-│  │ - api.js/api.d.ts   │     │  │ Port 3210 (API)        │   │
-│  │ - server.js/.d.ts   │     │  │ Port 3211 (Site Proxy) │   │
-│  │ - dataModel.d.ts    │     │  └─────────────────────────┘   │
-│  └─────────────────────┘     │           │                     │
-│                               │           ▼                     │
-│                               │  ┌─────────────────────────┐   │
-│                               │  │ Dashboard (Port 6791)   │   │
-│                               │  │ - Admin Interface       │   │
-│                               │  │ - Database Management   │   │
+│  │ Your Frontend       │────▶│  │ convex/example.ts       │   │
+│  │ - useQuery()        │     │  │ ┌─────────────────────┐ │   │
+│  │ - useMutation()     │     │  │ │ export const        │ │   │
+│  │ - Real-time updates │     │  │ │ listItems = query() │ │   │
+│  │ - Type safety       │     │  │ │ addItem = mutation()│ │   │
+│  └─────────────────────┘     │  │ │ deleteItem = ...    │ │   │
+│           │                  │  │ └─────────────────────┘ │   │
+│           ▼                  │  └─────────────────────────┘   │
+│  ┌─────────────────────┐     │           │                     │
+│  │ Generated Client    │◀────┼───────────┘                     │
+│  │ - api.example.*     │     │  ┌─────────────────────────┐   │
+│  │ - Type definitions  │     │  │ Docker Backend          │   │
+│  │ - Real-time hooks   │     │  │ Port 3210 (API)        │   │
+│  └─────────────────────┘     │  │ Port 6791 (Dashboard)   │   │
 │                               │  └─────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -120,28 +136,122 @@ Then deploy your functions:
 pnpm run deploy-functions
 ```
 
-## Integration with Your Frontend
+## Connecting to Your Next.js App (Docker Container)
 
-This boilerplate provides a ready-to-use Convex database. To connect your frontend:
+### Option 1: Side-by-Side Containers (Recommended)
 
-1. **Install Convex in your frontend project:**
+Create a `docker-compose.yml` in your main project:
+
+```yaml
+version: '3.8'
+services:
+  # Your Next.js frontend
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_CONVEX_URL=http://convex-backend:3210
+    depends_on:
+      - convex-backend
+    networks:
+      - app-network
+
+  # This Convex backend
+  convex-backend:
+    build: ./docker-convex  # Path to this boilerplate
+    ports:
+      - "3210:3210"  # API
+      - "6791:6791"  # Dashboard
+    volumes:
+      - convex-data:/app/convex-data
+    networks:
+      - app-network
+
+volumes:
+  convex-data:
+
+networks:
+  app-network:
+    driver: bridge
+```
+
+### Option 2: Turborepo Integration
+
+In your `turbo.json`:
+```json
+{
+  "pipeline": {
+    "dev": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "persistent": true
+    },
+    "convex:dev": {
+      "cache": false,
+      "persistent": true
+    }
+  }
+}
+```
+
+### Frontend Setup (Next.js)
+
+1. **Install Convex in your Next.js project:**
    ```bash
    npm install convex
    ```
 
-2. **Set your environment variable:**
+2. **Configure environment variables:**
    ```bash
-   VITE_CONVEX_URL=http://localhost:3210  # or your deployment URL
+   # .env.local
+   NEXT_PUBLIC_CONVEX_URL=http://localhost:3210
+   # For production: NEXT_PUBLIC_CONVEX_URL=http://convex-backend:3210
    ```
 
-3. **Import and use the generated API:**
+3. **Setup Convex provider in your app:**
    ```typescript
-   import { api } from "./path/to/convex/_generated/api";
-   import { useQuery, useMutation } from "convex/react";
+   // app/layout.tsx or pages/_app.tsx
+   import { ConvexProvider, ConvexReactClient } from "convex/react";
    
-   // In your component
-   const items = useQuery(api.example.listItems);
-   const addItem = useMutation(api.example.addItem);
+   const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+   
+   export default function RootLayout({ children }) {
+     return (
+       <ConvexProvider client={convex}>
+         {children}
+       </ConvexProvider>
+     );
+   }
+   ```
+
+4. **Use in your components:**
+   ```typescript
+   // components/ItemList.tsx
+   import { useQuery, useMutation } from "convex/react";
+   import { api } from "../convex/_generated/api";
+   
+   export function ItemList() {
+     const items = useQuery(api.example.listItems);
+     const addItem = useMutation(api.example.addItem);
+     const deleteItem = useMutation(api.example.deleteItem);
+   
+     return (
+       <div>
+         {items?.map(item => (
+           <div key={item._id}>
+             {item.name}
+             <button onClick={() => deleteItem({ id: item._id })}>
+               Delete
+             </button>
+           </div>
+         ))}
+         <button onClick={() => addItem({ name: "New Item" })}>
+           Add Item
+         </button>
+       </div>
+     );
+   }
    ```
 
 ## Database Setup
@@ -463,3 +573,53 @@ export const yourMutation = mutation({
 ```
 
 After adding functions, run `pnpm run deploy-functions` to update the generated API.
+
+## Intended Use Cases
+
+### Perfect For:
+
+**🚀 Rapid Prototyping**
+- Skip API development entirely - write database functions directly
+- Real-time features out of the box (live updates, collaborative editing)
+- Type-safe from database to frontend without manual API contracts
+
+**📱 Modern Web Applications**
+- **Chat applications**: Real-time messaging with automatic subscriptions
+- **Collaborative tools**: Live document editing, shared whiteboards
+- **Dashboards**: Real-time analytics and monitoring interfaces
+- **Social features**: Live comments, reactions, notifications
+
+**🏢 Enterprise Applications**
+- **Admin panels**: CRUD operations with real-time updates
+- **Workflow management**: Task tracking with live status updates
+- **Team collaboration**: Project management with real-time sync
+- **Customer support**: Live chat and ticket management
+
+**🔧 Developer Experience**
+- **No API boilerplate**: Functions are your API endpoints
+- **Automatic optimizations**: Query batching, caching, subscriptions
+- **Built-in auth**: User management and permissions
+- **File storage**: Handle uploads and file management
+- **Full-text search**: Built-in search capabilities
+
+### What You Get vs Traditional Stack:
+
+| Traditional Stack | Convex BaaS |
+|-------------------|-------------|
+| Write API routes manually | Functions auto-generate API |
+| Set up WebSockets for real-time | Real-time by default |
+| Manage database migrations | Schema evolution built-in |
+| Handle caching manually | Automatic query optimization |
+| Write separate validation | Type-safe end-to-end |
+| Set up auth from scratch | Built-in authentication |
+| Configure file uploads | Integrated file storage |
+
+### When NOT to Use:
+
+- **Heavy computational workloads**: Use dedicated compute services
+- **Complex SQL requirements**: Stick with PostgreSQL/MySQL
+- **Existing large codebases**: Migration might be complex
+- **Specific database features**: If you need Redis, Elasticsearch, etc.
+
+## Files Removed (Boilerplate Cleanup)
+```
